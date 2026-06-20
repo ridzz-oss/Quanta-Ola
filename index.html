@@ -2,39 +2,171 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Test DeviceMotion</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>3D Skipping Rope</title>
 <style>
-body{
-    font-family:Arial;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+body{margin:0;overflow:hidden;background:#101318;color:#fff;font-family:Arial}
+#ui{position:fixed;top:15px;left:0;right:0;text-align:center;z-index:10}
+#score{font-size:60px;font-weight:bold}
+#msg{margin-top:10px}
+button{padding:12px 20px;border:none;border-radius:10px;font-weight:bold}
+</style>
+</head>
+<body>
+
+<div id="ui">
+<div id="score">0</div>
+<button id="startBtn">Aktifkan Sensor</button>
+<div id="msg">Belum aktif</div>
+</div>
+
+<script src="https://unpkg.com/three@0.179.1/build/three.min.js"></script>
+<script>
+
+const msg=document.getElementById("msg");
+const scoreEl=document.getElementById("score");
+const startBtn=document.getElementById("startBtn");
+
+let score=0;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x101318);
+
+const camera=new THREE.PerspectiveCamera(
+60,
+window.innerWidth/window.innerHeight,
+0.1,
+100
+);
+camera.position.set(0,1,14);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x333333,2));
+
+const light=new THREE.DirectionalLight(0xffffff,2);
+light.position.set(5,10,5);
+scene.add(light);
+
+const floor=new THREE.Mesh(
+new THREE.PlaneGeometry(40,40),
+new THREE.MeshStandardMaterial({color:0x1b1f26})
+);
+floor.rotation.x=-Math.PI/2;
+floor.position.y=-5;
+scene.add(floor);
+
+const ropeMat=new THREE.MeshStandardMaterial({color:0xffffff});
+
+let rope;
+let phase=0;
+
+function createRope(){
+
+const pts=[];
+
+for(let i=0;i<=180;i++){
+
+const t=i/180*Math.PI*2;
+
+const x=Math.sin(t)*4;
+const y=Math.cos(t)*5;
+
+pts.push(new THREE.Vector3(x,y,0));
 }
 
-#popup{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.7);
-    display:flex;
-    justify-content:center;
-    align-items:center;
+const curve=new THREE.CatmullRomCurve3(pts,true);
+
+return new THREE.Mesh(
+new THREE.TubeGeometry(curve,200,0.08,12,true),
+ropeMat
+);
 }
 
-.box{
-    background:white;
-    padding:20px;
-    border-radius:12px;
-    text-align:center;
-    max-width:300px;
+rope=createRope();
+scene.add(rope);
+
+let accel=0;
+
+function handleMotion(e){
+
+const a=e.accelerationIncludingGravity;
+
+if(!a)return;
+
+const mag=Math.hypot(a.x||0,a.y||0,a.z||0);
+
+if(Math.abs(mag-9.8)>4){
+
+score++;
+scoreEl.textContent=score;
+
 }
 
-button{
-    margin-top:10px;
-    padding:8px 15px;
+msg.textContent=
+"X:"+((a.x)||0).toFixed(1)+
+" Y:"+((a.y)||0).toFixed(1)+
+" Z:"+((a.z)||0).toFixed(1);
+
 }
+
+startBtn.onclick=async()=>{
+
+try{
+
+if(
+typeof DeviceMotionEvent!=="undefined" &&
+typeof DeviceMotionEvent.requestPermission==="function"
+){
+const p=await DeviceMotionEvent.requestPermission();
+if(p!=="granted"){
+alert("Sensor ditolak");
+return;
+}
+}
+
+window.addEventListener("devicemotion",handleMotion,true);
+
+msg.textContent="Sensor aktif";
+startBtn.remove();
+
+}catch(err){
+
+alert(err);
+
+}
+
+};
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+phase+=0.05;
+
+rope.rotation.x=phase;
+
+renderer.render(scene,camera);
+
+}
+
+animate();
+
+window.addEventListener("resize",()=>{
+
+camera.aspect=window.innerWidth/window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth,window.innerHeight);
+
+});
+
+alert("DeviceMotion = "+typeof DeviceMotionEvent);
+
+</script>
+</body>
+</html>}
 </style>
 </head>
 <body>
