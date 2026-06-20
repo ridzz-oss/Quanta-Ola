@@ -255,28 +255,67 @@
       }
     }
 
-    startBtn.addEventListener("click", async () => {
-      try {
-        if (
-          typeof DeviceMotionEvent !== "undefined" &&
-          typeof DeviceMotionEvent.requestPermission === "function"
-        ) {
-          const res = await DeviceMotionEvent.requestPermission();
-          if (res !== "granted") {
-            showMsg("Sensor ditolak");
-            return;
-          }
-        }
+startBtn.addEventListener("click", async () => {
 
-        window.addEventListener("devicemotion", handleMotion, { passive: true });
-        sensorOn = true;
-        startBtn.remove();
-        showMsg("Sensor aktif");
-      } catch (err) {
-        alert(err);
+  try {
+
+    // iPhone / Safari
+    if (
+      window.DeviceMotionEvent &&
+      typeof DeviceMotionEvent.requestPermission === "function"
+    ) {
+
+      const permission =
+        await DeviceMotionEvent.requestPermission();
+
+      if (permission !== "granted") {
+        showMsg("Sensor ditolak");
+        return;
       }
+    }
+
+    // Android Chrome langsung jalan
+    window.addEventListener(
+      "devicemotion",
+      handleMotion,
+      true
+    );
+
+    // Debug
+    window.addEventListener("devicemotion", (e) => {
+
+      const a = e.accelerationIncludingGravity;
+
+      if (!a) return;
+
+      msgEl.textContent =
+        `${(a.x||0).toFixed(1)} | ${(a.y||0).toFixed(1)} | ${(a.z||0).toFixed(1)}`;
+
     });
 
+    sensorOn = true;
+
+    startBtn.remove();
+
+    showMsg("Sensor aktif");
+
+  } catch (err) {
+
+    console.error(err);
+
+    showMsg("Sensor Error");
+
+  }
+
+});
+console.log("HTTPS:", location.protocol);
+
+if (
+  window.DeviceMotionEvent === undefined
+) {
+  showMsg("DeviceMotion tidak didukung");
+   }
+   
     function animate() {
       requestAnimationFrame(animate);
 
