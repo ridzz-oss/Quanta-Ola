@@ -53,17 +53,32 @@ button{
 
 <script>
 
-const hasil =
-"DeviceMotion = " +
-typeof DeviceMotionEvent;
+const status = document.getElementById("status");
+const result = document.getElementById("result");
 
-document.getElementById("status")
-.innerText = hasil;
+result.innerText =
+"Menunggu data sensor...";
 
-document.getElementById("result")
-.innerText = hasil;
+window.addEventListener(
+"devicemotion",
+e => {
 
-</script>
+    const a =
+    e.accelerationIncludingGravity;
+
+    if(!a) return;
+
+    const text =
+    `X: ${(a.x||0).toFixed(2)}
+Y: ${(a.y||0).toFixed(2)}
+Z: ${(a.z||0).toFixed(2)}`;
+
+    status.innerText = text;
+    result.innerText = text;
+
+});
+
+    </script>
 
 </body>
 </html>
