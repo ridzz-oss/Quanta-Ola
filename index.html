@@ -2,168 +2,380 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>3D Skipping Rope</title>
+
 <style>
-body{margin:0;overflow:hidden;background:#101318;color:#fff;font-family:Arial}
-#ui{position:fixed;top:15px;left:0;right:0;text-align:center;z-index:10}
-#score{font-size:60px;font-weight:bold}
-#msg{margin-top:10px}
-button{padding:12px 20px;border:none;border-radius:10px;font-weight:bold}
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    overflow:hidden;
+    background:#0f1115;
+    font-family:Arial,sans-serif;
+    color:white;
+}
+
+#ui{
+    position:fixed;
+    top:15px;
+    left:0;
+    right:0;
+    text-align:center;
+    z-index:10;
+}
+
+#score{
+    font-size:72px;
+    font-weight:800;
+}
+
+#high{
+    opacity:.8;
+    margin-top:5px;
+}
+
+#msg{
+    margin-top:10px;
+    height:24px;
+    font-weight:bold;
+}
 </style>
+
 </head>
 <body>
 
 <div id="ui">
-<div id="score">0</div>
-<button id="startBtn">Aktifkan Sensor</button>
-<div id="msg">Belum aktif</div>
+    <div id="score">0</div>
+    <div id="high">High Score: 0</div>
+    <div id="msg">Gerakkan HP untuk lompat</div>
 </div>
 
 <script src="https://unpkg.com/three@0.179.1/build/three.min.js"></script>
+
 <script>
 
-const msg=document.getElementById("msg");
 const scoreEl=document.getElementById("score");
-const startBtn=document.getElementById("startBtn");
+const highEl=document.getElementById("high");
+const msgEl=document.getElementById("msg");
 
 let score=0;
+let highScore=Number(localStorage.getItem("skip_high")||0);
+
+highEl.textContent="High Score: "+highScore;
+
+function updateScore(){
+
+    scoreEl.textContent=score;
+
+    if(score>highScore){
+
+        highScore=score;
+
+        localStorage.setItem(
+            "skip_high",
+            String(highScore)
+        );
+
+        highEl.textContent=
+            "High Score: "+highScore;
+    }
+}
+
+function showMsg(text){
+
+    msgEl.textContent=text;
+
+    clearTimeout(showMsg.t);
+
+    showMsg.t=setTimeout(()=>{
+        msgEl.textContent="";
+    },600);
+}
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x101318);
 
-const camera=new THREE.PerspectiveCamera(
-60,
-window.innerWidth/window.innerHeight,
-0.1,
-100
+scene.background=
+new THREE.Color(0x0f1115);
+
+const camera=
+new THREE.PerspectiveCamera(
+    55,
+    window.innerWidth/window.innerHeight,
+    0.1,
+    100
 );
-camera.position.set(0,1,14);
 
-const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth,window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-scene.add(new THREE.HemisphereLight(0xffffff,0x333333,2));
-
-const light=new THREE.DirectionalLight(0xffffff,2);
-light.position.set(5,10,5);
-scene.add(light);
-
-const floor=new THREE.Mesh(
-new THREE.PlaneGeometry(40,40),
-new THREE.MeshStandardMaterial({color:0x1b1f26})
+camera.position.set(
+    0,
+    1,
+    14
 );
-floor.rotation.x=-Math.PI/2;
-floor.position.y=-5;
+
+const renderer=
+new THREE.WebGLRenderer({
+    antialias:true
+});
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(
+        window.devicePixelRatio,
+        2
+    )
+);
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+scene.add(
+    new THREE.HemisphereLight(
+        0xffffff,
+        0x223344,
+        2
+    )
+);
+
+const dir=
+new THREE.DirectionalLight(
+    0xffffff,
+    2
+);
+
+dir.position.set(
+    5,
+    10,
+    8
+);
+
+scene.add(dir);
+
+const floor=
+new THREE.Mesh(
+
+    new THREE.PlaneGeometry(
+        50,
+        50
+    ),
+
+    new THREE.MeshStandardMaterial({
+        color:0x181c22
+    })
+);
+
+floor.rotation.x=
+-Math.PI/2;
+
+floor.position.y=-4.5;
+
 scene.add(floor);
 
-const ropeMat=new THREE.MeshStandardMaterial({color:0xffffff});
+scene.add(
+    new THREE.GridHelper(
+        50,
+        25
+    )
+);
+
+const ropeMaterial=
+new THREE.MeshStandardMaterial({
+    color:0xffffff
+});
 
 let rope;
-let phase=0;
 
-function createRope(){
+function createRope(phase){
 
-const pts=[];
+    const pts=[];
 
-for(let i=0;i<=180;i++){
+    const rx=4;
+    const ry=5;
 
-const t=i/180*Math.PI*2;
+    for(
+        let i=0;
+        i<=180;
+        i++
+    ){
 
-const x=Math.sin(t)*4;
-const y=Math.cos(t)*5;
+        const t=
+        i/180*Math.PI*2;
 
-pts.push(new THREE.Vector3(x,y,0));
+        const x=
+        Math.sin(t)*rx;
+
+        const y=
+        Math.cos(t)*ry;
+
+        const z=
+        y*Math.sin(phase);
+
+        pts.push(
+            new THREE.Vector3(
+                x,
+                y*Math.cos(phase),
+                z
+            )
+        );
+    }
+
+    const curve=
+    new THREE.CatmullRomCurve3(
+        pts,
+        true
+    );
+
+    return new THREE.TubeGeometry(
+        curve,
+        220,
+        0.08,
+        12,
+        true
+    );
 }
 
-const curve=new THREE.CatmullRomCurve3(pts,true);
-
-return new THREE.Mesh(
-new THREE.TubeGeometry(curve,200,0.08,12,true),
-ropeMat
+rope=
+new THREE.Mesh(
+    createRope(0),
+    ropeMaterial
 );
-}
 
-rope=createRope();
 scene.add(rope);
 
-let accel=0;
+let ropePhase=0;
 
-function handleMotion(e){
+let waitingJump=false;
+let cycleChecked=false;
 
-const a=e.accelerationIncludingGravity;
+let accelEMA=9.8;
 
-if(!a)return;
+function registerJump(){
 
-const mag=Math.hypot(a.x||0,a.y||0,a.z||0);
+    if(waitingJump){
 
-if(Math.abs(mag-9.8)>4){
+        score++;
 
-score++;
-scoreEl.textContent=score;
+        updateScore();
 
+        waitingJump=false;
+        cycleChecked=true;
+
+        showMsg("PERFECT");
+    }
 }
 
-msg.textContent=
-"X:"+((a.x)||0).toFixed(1)+
-" Y:"+((a.y)||0).toFixed(1)+
-" Z:"+((a.z)||0).toFixed(1);
+window.addEventListener(
+    "devicemotion",
+    e=>{
 
-}
+        const a=
+        e.accelerationIncludingGravity;
 
-startBtn.onclick=async()=>{
+        if(!a) return;
 
-try{
+        const mag=
+        Math.hypot(
+            a.x||0,
+            a.y||0,
+            a.z||0
+        );
 
-if(
-typeof DeviceMotionEvent!=="undefined" &&
-typeof DeviceMotionEvent.requestPermission==="function"
-){
-const p=await DeviceMotionEvent.requestPermission();
-if(p!=="granted"){
-alert("Sensor ditolak");
-return;
-}
-}
+        accelEMA=
+            accelEMA*0.9+
+            mag*0.1;
 
-window.addEventListener("devicemotion",handleMotion,true);
+        const impulse=
+        Math.abs(
+            mag-accelEMA
+        );
 
-msg.textContent="Sensor aktif";
-startBtn.remove();
+        if(
+            impulse>3
+        ){
+            registerJump();
+        }
 
-}catch(err){
-
-alert(err);
-
-}
-
-};
+    },
+    true
+);
 
 function animate(){
 
-requestAnimationFrame(animate);
+    requestAnimationFrame(
+        animate
+    );
 
-phase+=0.05;
+    ropePhase+=0.05;
 
-rope.rotation.x=phase;
+    rope.geometry.dispose();
 
-renderer.render(scene,camera);
+    rope.geometry=
+    createRope(
+        ropePhase
+    );
 
+    const nearFeet=
+    Math.cos(
+        ropePhase
+    )>0.97;
+
+    if(
+        nearFeet &&
+        !cycleChecked
+    ){
+        waitingJump=true;
+    }
+
+    if(!nearFeet){
+
+        if(waitingJump){
+
+            score=0;
+
+            updateScore();
+
+            showMsg("MISS");
+
+            waitingJump=false;
+        }
+
+        cycleChecked=false;
+    }
+
+    renderer.render(
+        scene,
+        camera
+    );
 }
 
+updateScore();
 animate();
 
-window.addEventListener("resize",()=>{
+window.addEventListener(
+    "resize",
+    ()=>{
 
-camera.aspect=window.innerWidth/window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth,window.innerHeight);
+        camera.aspect=
+        window.innerWidth/
+        window.innerHeight;
 
-});
+        camera.updateProjectionMatrix();
 
-alert("DeviceMotion = "+typeof DeviceMotionEvent);
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+    }
+);
 
 </script>
+
 </body>
-</html>
+  </html>
