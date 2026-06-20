@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>3D Skipping Rope</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    overflow: hidden;
+    background: #0f1115;
+    font-family: Arial, sans-serif;
+    color: #fff;
+  }
+  #ui {
+    position: fixed;
+    inset: 16px 16px auto 16px;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+  }
+  #score {
+    font-size: 64px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  #high {
+    margin-top: 6px;
+    font-size: 16px;
+    opacity: 0.78;
+  }
+  #msg {
+    margin-top: 10px;
+    height: 28px;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  #startBtn {
+    pointer-events: auto;
+    margin-top: 14px;
+    padding: 12px 18px;
+    border: 0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    background: #ffffff;
+    color: #111;
+  }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+  <div id="ui">
+    <div id="score">0</div>
+    <div id="high">High Score: 0</div>
+    <button id="startBtn">Aktifkan Sensor</button>
+    <div id="msg"></div>
+  </div>
+
+  <script src="https://unpkg.com/three@0.179.1/build/three.min.js"></script>
+  <script>
+    const TAU = Math.PI * 2;
+
+    const scoreEl = document.getElementById("score");
+    const highEl = document.getElementById("high");
+    const msgEl = document.getElementById("msg");
+    const startBtn = document.getElementById("startBtn");
+
+    let score = 0;
+    let highScore = Number(localStorage.getItem("skip_high") || 0);
+    highEl.textContent = "High Score: " + highScore;
+
+    function updateScore() {
+      scoreEl.textContent = score;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem("skip_high", String(highScore));
+        highEl.textContent = "High Score: " + highScore;
+      }
+    }
+
+    function showMsg(text) {
+      msgEl.textContent = text;
+      clearTimeout(showMsg._t);
+      showMsg._t = setTimeout(() => (msgEl.textContent = ""), 500);
+    }
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f1115);
+    scene.fog = new THREE.Fog(0x0f1115, 16, 42);
+
+    const camera = new THREE.PerspectiveCamera(
+      55,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      100
+    );
+    camera.position.set(0, 1.0, 14);
+    camera.lookAt(0, 0.4, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    document.body.appendChild(renderer.domElement);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x223344, 1.6);
+    scene.add(hemi);
+
+    const dir = new THREE.DirectionalLight(0xffffff, 2.2);
+    dir.position.set(5, 10, 8);
+    scene.add(dir);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(60, 60),
+      new THREE.MeshStandardMaterial({
+        color: 0x161a20,
+        roughness: 1
+      })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -4.3;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(60, 30, 0x2c313a, 0x222833);
+    grid.position.y = -4.29;
+    scene.add(grid);
+
+    const ropeMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf3f3f3,
+      roughness: 0.45,
+      metalness: 0.05
+    });
+
+    let ropeMesh = null;
+
+    function baseRopePoints() {
+      const pts = [];
+      const segments = 180;
+
+      const rx = 4.15;  // lebar rope
+      const ry = 5.05;  // tinggi rope
+
+      for (let i = 0; i <= segments; i++) {
+        const t = (i / segments) * TAU;
+
+        // bentuk dasar: oval, tapi tidak bulat sempurna
+        let x = rx * Math.sin(t);
+        let y = ry * Math.cos(t);
+
+        // deformasi kecil biar terasa seperti rope asli, bukan lingkaran biasa
+        x *= 0.96 + 0.04 * Math.cos(2 * t);
+        y += 0.28 * Math.cos(2 * t) - 0.10 * Math.cos(4 * t);
+
+        pts.push(new THREE.Vector3(x, y, 0));
+      }
+
+      return pts;
+    }
+
+    const basePts = baseRopePoints();
+
+    let ropePhase = 0;
+    const ropeSpeed = 0.045; // samakan laju putar
+
+    function makeRopeGeometry(phase) {
+      const cos = Math.cos(phase);
+      const sin = Math.sin(phase);
+
+      const rotated = basePts.map((p) => {
+        // rotate around X-axis supaya kelihatan 3D saat muter
+        const y = p.y * cos - p.z * sin;
+        const z = p.y * sin + p.z * cos;
+
+        // sedikit depth wobble biar tidak kaku seperti torus
+        const x = p.x + 0.18 * Math.sin(2 * phase + p.y * 0.35);
+
+        return new THREE.Vector3(x, y, z);
+      });
+
+      const curve = new THREE.CatmullRomCurve3(rotated, true, "catmullrom", 0.5);
+      return new THREE.TubeGeometry(curve, 220, 0.10, 12, true);
+    }
+
+    function rebuildRope() {
+      const geo = makeRopeGeometry(ropePhase);
+
+      if (ropeMesh) {
+        ropeMesh.geometry.dispose();
+        ropeMesh.geometry = geo;
+      } else {
+        ropeMesh = new THREE.Mesh(geo, ropeMaterial);
+        ropeMesh.position.y = 0.2;
+        scene.add(ropeMesh);
+      }
+    }
+
+    function drawShadow() {
+      if (scene.getObjectByName("shadow")) {
+        scene.remove(scene.getObjectByName("shadow"));
+      }
+
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(2.7, 48),
+        new THREE.MeshBasicMaterial({
+          color: 0x000000,
+          transparent: true,
+          opacity: 0.22
+        })
+      );
+      shadow.name = "shadow";
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.scale.set(2.0 + Math.sin(ropePhase) * 0.22, 0.6, 1);
+      shadow.position.set(0, -4.28, 0);
+      scene.add(shadow);
+    }
+
+    let sensorOn = false;
+
+    let accelEMA = 9.8;
+    let jumpCooldownUntil = 0;
+    let waitingJump = false;
+    let cycleChecked = false;
+
+    function registerJump() {
+      const now = performance.now();
+      if (now < jumpCooldownUntil) return;
+      jumpCooldownUntil = now + 250;
+
+      if (waitingJump) {
+        score++;
+        updateScore();
+        waitingJump = false;
+        cycleChecked = true;
+        showMsg("PERFECT");
+      }
+    }
+
+    function handleMotion(e) {
+      const a = e.accelerationIncludingGravity || e.acceleration;
+      if (!a) return;
+
+      const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+
+      // high-pass sederhana: cukup bagus untuk lompat
+      accelEMA = accelEMA * 0.9 + mag * 0.1;
+      const impulse = mag - accelEMA;
+
+      if (impulse > 3.6) {
+        registerJump();
+      }
+    }
+
+    startBtn.addEventListener("click", async () => {
+      try {
+        if (
+          typeof DeviceMotionEvent !== "undefined" &&
+          typeof DeviceMotionEvent.requestPermission === "function"
+        ) {
+          const res = await DeviceMotionEvent.requestPermission();
+          if (res !== "granted") {
+            showMsg("Sensor ditolak");
+            return;
+          }
+        }
+
+        window.addEventListener("devicemotion", handleMotion, { passive: true });
+        sensorOn = true;
+        startBtn.remove();
+        showMsg("Sensor aktif");
+      } catch (err) {
+        alert(err);
+      }
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      ropePhase += ropeSpeed;
+      if (ropePhase >= TAU) ropePhase -= TAU;
+
+      rebuildRope();
+      drawShadow();
+
+      // timing saat rope lewat bawah
+      const nearFeet = Math.cos(ropePhase) > 0.965;
+
+      if (nearFeet && !cycleChecked) {
+        waitingJump = true;
+      }
+
+      if (!nearFeet) {
+        if (waitingJump) {
+          score = 0;
+          updateScore();
+          showMsg("MISS");
+          waitingJump = false;
+        }
+        cycleChecked = false;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    updateScore();
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
