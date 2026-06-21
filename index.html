@@ -1,381 +1,367 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Skipping Rope</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pro Runner</title>
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
+
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+margin:0;
+padding:0;
+box-sizing:border-box;
 }
 
-body{
-    overflow:hidden;
-    background:#0f1115;
-    font-family:Arial,sans-serif;
-    color:white;
+html,body{
+width:100%;
+height:100%;
+overflow:hidden;
+font-family:Arial,sans-serif;
+background:#0f1115;
 }
 
-#ui{
-    position:fixed;
-    top:15px;
-    left:0;
-    right:0;
-    text-align:center;
-    z-index:10;
+#header{
+position:fixed;
+top:25px;
+left:0;
+right:0;
+height:55px;
+background:#181b22;
+border-bottom:1px solid #333;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:0 10px;
+z-index:99999;
 }
 
-#score{
-    font-size:72px;
-    font-weight:800;
+#title{
+color:white;
+font-weight:bold;
+font-size:16px;
 }
 
-#high{
-    opacity:.8;
-    margin-top:5px;
+#menu{
+display:flex;
+gap:6px;
 }
 
-#msg{
-    margin-top:10px;
-    height:24px;
-    font-weight:bold;
+.btn{
+width:40px;
+height:35px;
+border:none;
+border-radius:8px;
+background:#252a35;
+color:white;
+cursor:pointer;
 }
+
+.cr-group{
+display:flex;
+align-items:center;
+background:#252a35;
+border-radius:8px;
+overflow:hidden;
+height:35px;
+}
+
+.cr-btn{
+width:40px;
+height:35px;
+border:none;
+background:transparent;
+color:white;
+cursor:pointer;
+color:white;
+}
+
+.cr-divider{
+width:1px;
+height:18px;
+background:#4b5568;
+}
+
+#content{
+position:fixed;
+top:80px;
+left:0;
+right:0;
+bottom:0;
+}
+
+#editor{
+width:100%;
+height:100%;
+background:#111;
+color:white;
+border:none;
+outline:none;
+resize:none;
+padding:12px;
+font-family:monospace;
+font-size:14px;
+}
+
+#preview{
+width:100%;
+height:100%;
+border:none;
+display:none;
+background:white;
+}
+
+#floatingDot{
+position:fixed;
+left:20px;
+top:100px;
+width:50px;
+height:50px;
+border-radius:50%;
+background:rgba(0,0,0,.7);
+backdrop-filter:blur(8px);
+color:white;
+font-size:34px;
+display:none;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+z-index:999999;
+user-select:none;
+}
+
+#floatingMenu{
+position:fixed;
+left:80px;
+top:100px;
+background:#181b22;
+border-radius:12px;
+padding:8px;
+display:none;
+opacity:0;
+transform:scale(.8);
+transition:.2s;
+z-index:999999;
+}
+
+.menu-btn{
+border:none;
+background:#252a35;
+color:white;
+padding:10px 14px;
+border-radius:8px;
+cursor:pointer;
+}
+
 </style>
-
 </head>
+
 <body>
 
-<div id="ui">
-    <div id="score">0</div>
-    <div id="high">High Score: 0</div>
-    <div id="msg">Gerakkan HP untuk lompat</div>
+<div id="header">
+
+<div id="title">
+PRO RUNNER
 </div>
 
-<script src="https://unpkg.com/three@0.179.1/build/three.min.js"></script>
+<div id="menu">
+
+<button class="btn" onclick="openFile()">
+<i class="fas fa-upload"></i>
+</button>
+
+<div class="cr-group">
+
+<button class="cr-btn" onclick="showCode()">
+<i class="fas fa-code"></i>
+</button>
+
+<div class="cr-divider"></div>
+
+<button class="cr-btn" onclick="runCode()">
+<i class="fas fa-play"></i>
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<input
+id="fileInput"
+type="file"
+accept=".html"
+style="display:none">
+
+<div id="content">
+
+<textarea id="editor"
+placeholder="Tempel kode HTML di sini..."></textarea>
+
+<iframe id="preview"></iframe>
+
+</div>
+
+<div id="floatingDot">•</div>
+
+<div id="floatingMenu">
+<button class="menu-btn" id="backCodeBtn">
+<i class="fas fa-code"></i> Code
+</button>
+</div>
 
 <script>
 
-const scoreEl=document.getElementById("score");
-const highEl=document.getElementById("high");
-const msgEl=document.getElementById("msg");
+const editor=document.getElementById("editor");
+const preview=document.getElementById("preview");
+const header=document.getElementById("header");
 
-let score=0;
-let highScore=Number(localStorage.getItem("skip_high")||0);
+const floatingDot=document.getElementById("floatingDot");
+const floatingMenu=document.getElementById("floatingMenu");
 
-highEl.textContent="High Score: "+highScore;
+function showCode(){
 
-function updateScore(){
+editor.style.display="block";
+preview.style.display="none";
 
-    scoreEl.textContent=score;
-
-    if(score>highScore){
-
-        highScore=score;
-
-        localStorage.setItem(
-            "skip_high",
-            String(highScore)
-        );
-
-        highEl.textContent=
-            "High Score: "+highScore;
-    }
 }
 
-function showMsg(text){
+function runCode(){
 
-    msgEl.textContent=text;
+let code=editor.value.trim();
 
-    clearTimeout(showMsg.t);
-
-    showMsg.t=setTimeout(()=>{
-        msgEl.textContent="";
-    },600);
+if(code===""){
+alert("Masukkan kode dulu");
+return;
 }
 
-const scene=new THREE.Scene();
+header.style.display="none";
 
-scene.background=
-new THREE.Color(0x0f1115);
+editor.style.display="none";
+preview.style.display="block";
 
-const camera=
-new THREE.PerspectiveCamera(
-    55,
-    window.innerWidth/window.innerHeight,
-    0.1,
-    100
-);
+preview.srcdoc=code;
 
-camera.position.set(
-    0,
-    1,
-    14
-);
+floatingDot.style.display="flex";
 
-const renderer=
-new THREE.WebGLRenderer({
-    antialias:true
+}
+
+document
+.getElementById("backCodeBtn")
+.onclick=function(){
+
+preview.style.display="none";
+editor.style.display="block";
+
+header.style.display="flex";
+
+floatingDot.style.display="none";
+floatingMenu.style.display="none";
+
+};
+
+floatingDot.onclick=function(){
+
+if(floatingMenu.style.display==="block"){
+
+floatingMenu.style.opacity="0";
+floatingMenu.style.transform="scale(.8)";
+
+setTimeout(()=>{
+floatingMenu.style.display="none";
+},200);
+
+}else{
+
+floatingMenu.style.display="block";
+
+setTimeout(()=>{
+floatingMenu.style.opacity="1";
+floatingMenu.style.transform="scale(1)";
+},10);
+
+}
+
+};
+
+let dragging=false;
+let moved=false;
+let startX=0;
+let startY=0;
+let offsetX=0;
+let offsetY=0;
+
+floatingDot.addEventListener("touchstart",e=>{
+
+dragging=true;
+moved=false;
+
+startX=e.touches[0].clientX;
+startY=e.touches[0].clientY;
+
+offsetX=startX-floatingDot.offsetLeft;
+offsetY=startY-floatingDot.offsetTop;
+
 });
 
-renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-);
+floatingDot.addEventListener("touchmove",e=>{
 
-renderer.setPixelRatio(
-    Math.min(
-        window.devicePixelRatio,
-        2
-    )
-);
+if(!dragging)return;
 
-document.body.appendChild(
-    renderer.domElement
-);
+let x=e.touches[0].clientX-offsetX;
+let y=e.touches[0].clientY-offsetY;
 
-scene.add(
-    new THREE.HemisphereLight(
-        0xffffff,
-        0x223344,
-        2
-    )
-);
+if(
+Math.abs(e.touches[0].clientX-startX)>5 ||
+Math.abs(e.touches[0].clientY-startY)>5
+){
+moved=true;
+}
 
-const dir=
-new THREE.DirectionalLight(
-    0xffffff,
-    2
-);
+floatingDot.style.left=x+"px";
+floatingDot.style.top=y+"px";
 
-dir.position.set(
-    5,
-    10,
-    8
-);
+floatingMenu.style.left=(x+60)+"px";
+floatingMenu.style.top=y+"px";
 
-scene.add(dir);
-
-const floor=
-new THREE.Mesh(
-
-    new THREE.PlaneGeometry(
-        50,
-        50
-    ),
-
-    new THREE.MeshStandardMaterial({
-        color:0x181c22
-    })
-);
-
-floor.rotation.x=
--Math.PI/2;
-
-floor.position.y=-4.5;
-
-scene.add(floor);
-
-scene.add(
-    new THREE.GridHelper(
-        50,
-        25
-    )
-);
-
-const ropeMaterial=
-new THREE.MeshStandardMaterial({
-    color:0xffffff
 });
 
-let rope;
+floatingDot.addEventListener("touchend",()=>{
 
-function createRope(phase){
+dragging=false;
 
-    const pts=[];
+});
 
-    const rx=4;
-    const ry=5;
+const fileInput=
+document.getElementById("fileInput");
 
-    for(
-        let i=0;
-        i<=180;
-        i++
-    ){
-
-        const t=
-        i/180*Math.PI*2;
-
-        const x=
-        Math.sin(t)*rx;
-
-        const y=
-        Math.cos(t)*ry;
-
-        const z=
-        y*Math.sin(phase);
-
-        pts.push(
-            new THREE.Vector3(
-                x,
-                y*Math.cos(phase),
-                z
-            )
-        );
-    }
-
-    const curve=
-    new THREE.CatmullRomCurve3(
-        pts,
-        true
-    );
-
-    return new THREE.TubeGeometry(
-        curve,
-        220,
-        0.08,
-        12,
-        true
-    );
+function openFile(){
+fileInput.click();
 }
 
-rope=
-new THREE.Mesh(
-    createRope(0),
-    ropeMaterial
-);
+fileInput.addEventListener("change",function(e){
 
-scene.add(rope);
+let file=e.target.files[0];
 
-let ropePhase=0;
+if(!file)return;
 
-let waitingJump=false;
-let cycleChecked=false;
+let reader=new FileReader();
 
-let accelEMA=9.8;
+reader.onload=function(ev){
 
-function registerJump(){
+editor.value=ev.target.result;
 
-    if(waitingJump){
+};
 
-        score++;
+reader.readAsText(file);
 
-        updateScore();
-
-        waitingJump=false;
-        cycleChecked=true;
-
-        showMsg("PERFECT");
-    }
-}
-
-window.addEventListener(
-    "devicemotion",
-    e=>{
-
-        const a=
-        e.accelerationIncludingGravity;
-
-        if(!a) return;
-
-        const mag=
-        Math.hypot(
-            a.x||0,
-            a.y||0,
-            a.z||0
-        );
-
-        accelEMA=
-            accelEMA*0.9+
-            mag*0.1;
-
-        const impulse=
-        Math.abs(
-            mag-accelEMA
-        );
-
-        if(
-            impulse>3
-        ){
-            registerJump();
-        }
-
-    },
-    true
-);
-
-function animate(){
-
-    requestAnimationFrame(
-        animate
-    );
-
-    ropePhase+=0.05;
-
-    rope.geometry.dispose();
-
-    rope.geometry=
-    createRope(
-        ropePhase
-    );
-
-    const nearFeet=
-    Math.cos(
-        ropePhase
-    )>0.97;
-
-    if(
-        nearFeet &&
-        !cycleChecked
-    ){
-        waitingJump=true;
-    }
-
-    if(!nearFeet){
-
-        if(waitingJump){
-
-            score=0;
-
-            updateScore();
-
-            showMsg("MISS");
-
-            waitingJump=false;
-        }
-
-        cycleChecked=false;
-    }
-
-    renderer.render(
-        scene,
-        camera
-    );
-}
-
-updateScore();
-animate();
-
-window.addEventListener(
-    "resize",
-    ()=>{
-
-        camera.aspect=
-        window.innerWidth/
-        window.innerHeight;
-
-        camera.updateProjectionMatrix();
-
-        renderer.setSize(
-            window.innerWidth,
-            window.innerHeight
-        );
-    }
-);
+});
 
 </script>
 
 </body>
-  </html>
+    </html>
