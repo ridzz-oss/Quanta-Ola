@@ -1,367 +1,504 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pro Runner</title>
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
-html,body{
-width:100%;
-height:100%;
-overflow:hidden;
-font-family:Arial,sans-serif;
-background:#0f1115;
-}
-
-#header{
-position:fixed;
-top:25px;
-left:0;
-right:0;
-height:55px;
-background:#181b22;
-border-bottom:1px solid #333;
-display:flex;
-align-items:center;
-justify-content:space-between;
-padding:0 10px;
-z-index:99999;
-}
-
-#title{
-color:white;
-font-weight:bold;
-font-size:16px;
-}
-
-#menu{
-display:flex;
-gap:6px;
-}
-
-.btn{
-width:40px;
-height:35px;
-border:none;
-border-radius:8px;
-background:#252a35;
-color:white;
-cursor:pointer;
-}
-
-.cr-group{
-display:flex;
-align-items:center;
-background:#252a35;
-border-radius:8px;
-overflow:hidden;
-height:35px;
-}
-
-.cr-btn{
-width:40px;
-height:35px;
-border:none;
-background:transparent;
-color:white;
-cursor:pointer;
-color:white;
-}
-
-.cr-divider{
-width:1px;
-height:18px;
-background:#4b5568;
-}
-
-#content{
-position:fixed;
-top:80px;
-left:0;
-right:0;
-bottom:0;
-}
-
-#editor{
-width:100%;
-height:100%;
-background:#111;
-color:white;
-border:none;
-outline:none;
-resize:none;
-padding:12px;
-font-family:monospace;
-font-size:14px;
-}
-
-#preview{
-width:100%;
-height:100%;
-border:none;
-display:none;
-background:white;
-}
-
-#floatingDot{
-position:fixed;
-left:20px;
-top:100px;
-width:50px;
-height:50px;
-border-radius:50%;
-background:rgba(0,0,0,.7);
-backdrop-filter:blur(8px);
-color:white;
-font-size:34px;
-display:none;
-align-items:center;
-justify-content:center;
-cursor:pointer;
-z-index:999999;
-user-select:none;
-}
-
-#floatingMenu{
-position:fixed;
-left:80px;
-top:100px;
-background:#181b22;
-border-radius:12px;
-padding:8px;
-display:none;
-opacity:0;
-transform:scale(.8);
-transition:.2s;
-z-index:999999;
-}
-
-.menu-btn{
-border:none;
-background:#252a35;
-color:white;
-padding:10px 14px;
-border-radius:8px;
-cursor:pointer;
-}
-
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#4F46E5" />
+  <title>Penabung</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
-
-<div id="header">
-
-<div id="title">
-PRO RUNNER
-</div>
-
-<div id="menu">
-
-<button class="btn" onclick="openFile()">
-<i class="fas fa-upload"></i>
-</button>
-
-<div class="cr-group">
-
-<button class="cr-btn" onclick="showCode()">
-<i class="fas fa-code"></i>
-</button>
-
-<div class="cr-divider"></div>
-
-<button class="cr-btn" onclick="runCode()">
-<i class="fas fa-play"></i>
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<input
-id="fileInput"
-type="file"
-accept=".html"
-style="display:none">
-
-<div id="content">
-
-<textarea id="editor"
-placeholder="Tempel kode HTML di sini..."></textarea>
-
-<iframe id="preview"></iframe>
-
-</div>
-
-<div id="floatingDot">•</div>
-
-<div id="floatingMenu">
-<button class="menu-btn" id="backCodeBtn">
-<i class="fas fa-code"></i> Code
-</button>
-</div>
-
-<script>
-
-const editor=document.getElementById("editor");
-const preview=document.getElementById("preview");
-const header=document.getElementById("header");
-
-const floatingDot=document.getElementById("floatingDot");
-const floatingMenu=document.getElementById("floatingMenu");
-
-function showCode(){
-
-editor.style.display="block";
-preview.style.display="none";
-
-}
-
-function runCode(){
-
-let code=editor.value.trim();
-
-if(code===""){
-alert("Masukkan kode dulu");
-return;
-}
-
-header.style.display="none";
-
-editor.style.display="none";
-preview.style.display="block";
-
-preview.srcdoc=code;
-
-floatingDot.style.display="flex";
-
-}
-
-document
-.getElementById("backCodeBtn")
-.onclick=function(){
-
-preview.style.display="none";
-editor.style.display="block";
-
-header.style.display="flex";
-
-floatingDot.style.display="none";
-floatingMenu.style.display="none";
-
-};
-
-floatingDot.onclick=function(){
-
-if(floatingMenu.style.display==="block"){
-
-floatingMenu.style.opacity="0";
-floatingMenu.style.transform="scale(.8)";
-
-setTimeout(()=>{
-floatingMenu.style.display="none";
-},200);
-
-}else{
-
-floatingMenu.style.display="block";
-
-setTimeout(()=>{
-floatingMenu.style.opacity="1";
-floatingMenu.style.transform="scale(1)";
-},10);
-
-}
-
-};
-
-let dragging=false;
-let moved=false;
-let startX=0;
-let startY=0;
-let offsetX=0;
-let offsetY=0;
-
-floatingDot.addEventListener("touchstart",e=>{
-
-dragging=true;
-moved=false;
-
-startX=e.touches[0].clientX;
-startY=e.touches[0].clientY;
-
-offsetX=startX-floatingDot.offsetLeft;
-offsetY=startY-floatingDot.offsetTop;
-
-});
-
-floatingDot.addEventListener("touchmove",e=>{
-
-if(!dragging)return;
-
-let x=e.touches[0].clientX-offsetX;
-let y=e.touches[0].clientY-offsetY;
-
-if(
-Math.abs(e.touches[0].clientX-startX)>5 ||
-Math.abs(e.touches[0].clientY-startY)>5
-){
-moved=true;
-}
-
-floatingDot.style.left=x+"px";
-floatingDot.style.top=y+"px";
-
-floatingMenu.style.left=(x+60)+"px";
-floatingMenu.style.top=y+"px";
-
-});
-
-floatingDot.addEventListener("touchend",()=>{
-
-dragging=false;
-
-});
-
-const fileInput=
-document.getElementById("fileInput");
-
-function openFile(){
-fileInput.click();
-}
-
-fileInput.addEventListener("change",function(e){
-
-let file=e.target.files[0];
-
-if(!file)return;
-
-let reader=new FileReader();
-
-reader.onload=function(ev){
-
-editor.value=ev.target.result;
-
-};
-
-reader.readAsText(file);
-
-});
-
-</script>
-
+  <div id="appShell" class="app-shell">
+    <section id="splashScreen" class="splash-screen">
+      <div class="splash-card glass">
+        <div class="splash-logo-wrap">
+          <div class="splash-logo"></div>
+          <div class="splash-logo-ring"></div>
+        </div>
+        <h1>Penabung</h1>
+        <p>Kelola tabungan dengan tampilan premium, cepat, dan nyaman di HP.</p>
+        <div class="splash-progress">
+          <div class="splash-progress-bar" id="splashProgressBar"></div>
+        </div>
+        <span id="splashProgressLabel" class="splash-label">Menyiapkan aplikasi…</span>
+      </div>
+    </section>
+
+    <section id="welcomeScreen" class="welcome-screen hidden">
+      <div class="welcome-hero">
+        <div class="hero-illustration glass">
+          <div class="hero-orb orb-a"></div>
+          <div class="hero-orb orb-b"></div>
+          <div class="hero-orb orb-c"></div>
+          <div class="hero-chart">
+            <span style="--h: 28%"></span>
+            <span style="--h: 54%"></span>
+            <span style="--h: 68%"></span>
+            <span style="--h: 46%"></span>
+            <span style="--h: 82%"></span>
+          </div>
+        </div>
+        <div class="welcome-copy">
+          <span class="badge">Modern Fintech</span>
+          <h2>Tabungan terasa lebih rapi, lebih cepat, dan lebih menyenangkan.</h2>
+          <p>Semua data tersimpan lokal, navigasi halus, transaksi jelas, dan target selalu mudah dipantau.</p>
+        </div>
+      </div>
+      <button class="primary-btn ripple" id="startAppBtn">Mulai Sekarang</button>
+    </section>
+
+    <main id="mainApp" class="main-app hidden" aria-hidden="true">
+      <header class="topbar glass">
+        <div>
+          <p class="eyebrow" id="greetingText">Selamat datang</p>
+          <h2 id="topbarTitle">Home</h2>
+        </div>
+        <button class="icon-btn ripple" id="themeToggleBtn" aria-label="Ganti tema">
+          <span class="icon" data-icon="theme"></span>
+        </button>
+      </header>
+
+      <div class="page-stack">
+        <section class="page active" id="page-home" data-page="home">
+          <div class="hero-card glass">
+            <div class="hero-card-top">
+              <div>
+                <p class="eyebrow">Saldo utama</p>
+                <h1 id="mainBalance">Rp0</h1>
+              </div>
+              <div class="mini-kpi">
+                <span class="mini-kpi-label">Total tabungan</span>
+                <strong id="totalSavings">Rp0</strong>
+              </div>
+            </div>
+            <div class="balance-meta">
+              <div>
+                <span>Target aktif</span>
+                <strong id="activeTargetName">Belum ada target</strong>
+              </div>
+              <div>
+                <span>Progress</span>
+                <strong id="activeTargetPercent">0%</strong>
+              </div>
+            </div>
+            <div class="progress-card">
+              <div class="progress-ring-wrap">
+                <svg viewBox="0 0 120 120" class="progress-ring">
+                  <circle cx="60" cy="60" r="48" class="ring-track"></circle>
+                  <circle cx="60" cy="60" r="48" class="ring-fill" id="mainProgressRing"></circle>
+                </svg>
+                <div class="progress-ring-center">
+                  <strong id="mainProgressValue">0%</strong>
+                  <span>Sasaran</span>
+                </div>
+              </div>
+              <div class="progress-copy">
+                <p id="progressCopy">Tambah target agar progres tabungan bisa dipantau otomatis.</p>
+                <button class="secondary-btn ripple" data-nav="target">Atur Target</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-grid">
+            <button class="quick-action glass ripple" data-nav="add">
+              <span class="icon" data-icon="plus"></span>
+              <strong>Tambah</strong>
+              <small>Setor dana</small>
+            </button>
+            <button class="quick-action glass ripple" data-nav="withdraw">
+              <span class="icon" data-icon="minus"></span>
+              <strong>Tarik</strong>
+              <small>Ambil saldo</small>
+            </button>
+            <button class="quick-action glass ripple" data-nav="history">
+              <span class="icon" data-icon="history"></span>
+              <strong>Riwayat</strong>
+              <small>Semua transaksi</small>
+            </button>
+            <button class="quick-action glass ripple" data-nav="statistics">
+              <span class="icon" data-icon="chart"></span>
+              <strong>Statistik</strong>
+              <small>Analisis bulanan</small>
+            </button>
+          </div>
+
+          <div class="grid-2">
+            <article class="section-card glass">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Ringkasan bulan ini</p>
+                  <h3>Arus dana</h3>
+                </div>
+                <span class="chip success" id="monthlyDeltaChip">+0</span>
+              </div>
+              <div class="summary-list">
+                <div>
+                  <span>Pemasukan</span>
+                  <strong id="monthIncome">Rp0</strong>
+                </div>
+                <div>
+                  <span>Penarikan</span>
+                  <strong id="monthWithdraw">Rp0</strong>
+                </div>
+                <div>
+                  <span>Transaksi</span>
+                  <strong id="monthTxCount">0</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="section-card glass">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Motivasi harian</p>
+                  <h3>Langkah kecil tetap berarti</h3>
+                </div>
+                <span class="chip">Hari ini</span>
+              </div>
+              <p class="motivation" id="motivationText">Sedikit yang disimpan hari ini, bisa jadi kebebasan besar nanti.</p>
+            </article>
+          </div>
+
+          <article class="section-card glass chart-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Grafik sederhana</p>
+                <h3>7 hari terakhir</h3>
+              </div>
+              <span class="chip">Live</span>
+            </div>
+            <canvas id="homeChart" width="800" height="320" aria-label="Grafik tabungan mingguan"></canvas>
+          </article>
+
+          <article class="section-card glass">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Riwayat terbaru</p>
+                <h3>Transaksi terakhir</h3>
+              </div>
+              <button class="text-btn ripple" data-nav="history">Lihat semua</button>
+            </div>
+            <div id="recentTransactions" class="transaction-list"></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-add" data-page="add">
+          <article class="section-card glass form-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Tambah Tabungan</p>
+                <h3>Setor dana baru</h3>
+              </div>
+              <span class="chip accent">Aman</span>
+            </div>
+            <form id="saveForm" class="form-grid">
+              <label>
+                <span>Nominal</span>
+                <div class="input-wrap">
+                  <span class="prefix">Rp</span>
+                  <input id="saveAmount" type="number" inputmode="decimal" min="1000" placeholder="contoh: 50000" />
+                </div>
+                <small class="field-error" data-error-for="saveAmount"></small>
+              </label>
+              <label>
+                <span>Kategori</span>
+                <select id="saveCategory">
+                  <option value="">Pilih kategori</option>
+                  <option>Gaji</option>
+                  <option>Bonus</option>
+                  <option>Harian</option>
+                  <option>Investasi</option>
+                  <option>Lainnya</option>
+                </select>
+                <small class="field-error" data-error-for="saveCategory"></small>
+              </label>
+              <label class="full">
+                <span>Catatan</span>
+                <textarea id="saveNote" rows="4" placeholder="Tuliskan sumber atau keterangan singkat"></textarea>
+                <small class="field-error" data-error-for="saveNote"></small>
+              </label>
+              <label>
+                <span>Tanggal</span>
+                <input id="saveDate" type="date" />
+                <small class="field-error" data-error-for="saveDate"></small>
+              </label>
+              <div class="form-actions full">
+                <button type="reset" class="secondary-btn ripple">Reset</button>
+                <button type="submit" class="primary-btn ripple">Simpan Tabungan</button>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <section class="page" id="page-withdraw" data-page="withdraw">
+          <article class="section-card glass form-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Tarik Tabungan</p>
+                <h3>Kurangi saldo dengan kontrol penuh</h3>
+              </div>
+              <span class="chip warning" id="withdrawLimitChip">Saldo cukup</span>
+            </div>
+            <form id="withdrawForm" class="form-grid">
+              <label>
+                <span>Nominal</span>
+                <div class="input-wrap">
+                  <span class="prefix">Rp</span>
+                  <input id="withdrawAmount" type="number" inputmode="decimal" min="1000" placeholder="contoh: 25000" />
+                </div>
+                <small class="field-error" data-error-for="withdrawAmount"></small>
+              </label>
+              <label>
+                <span>Alasan</span>
+                <select id="withdrawReason">
+                  <option value="">Pilih alasan</option>
+                  <option>Darurat</option>
+                  <option>Kebutuhan rumah</option>
+                  <option>Tagihan</option>
+                  <option>Personal</option>
+                  <option>Lainnya</option>
+                </select>
+                <small class="field-error" data-error-for="withdrawReason"></small>
+              </label>
+              <label class="full">
+                <span>Konfirmasi</span>
+                <textarea id="withdrawConfirm" rows="4" placeholder="Tulis: saya setuju menarik dana"></textarea>
+                <small class="field-error" data-error-for="withdrawConfirm"></small>
+              </label>
+              <div class="form-actions full">
+                <button type="button" class="secondary-btn ripple" data-nav="home">Batal</button>
+                <button type="submit" class="danger-btn ripple">Tarik Sekarang</button>
+              </div>
+            </form>
+          </article>
+        </section>
+
+        <section class="page" id="page-target" data-page="target">
+          <article class="section-card glass">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Target</p>
+                <h3>Daftar target aktif</h3>
+              </div>
+              <button class="primary-mini ripple" id="addTargetBtn">Tambah Target</button>
+            </div>
+            <div id="targetList" class="target-list"></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-history" data-page="history">
+          <article class="section-card glass">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Riwayat</p>
+                <h3>Semua transaksi</h3>
+              </div>
+              <span class="chip" id="historyCountChip">0 item</span>
+            </div>
+            <div class="search-row">
+              <div class="search-bar">
+                <span class="icon" data-icon="search"></span>
+                <input id="historySearch" type="search" placeholder="Cari transaksi..." />
+              </div>
+              <button class="secondary-btn ripple" id="sortHistoryBtn">Urutkan</button>
+            </div>
+            <div class="filter-row">
+              <button class="chip filter-chip active ripple" data-filter="all">Semua</button>
+              <button class="chip filter-chip ripple" data-filter="save">Setor</button>
+              <button class="chip filter-chip ripple" data-filter="withdraw">Tarik</button>
+            </div>
+            <div id="historyList" class="transaction-list large"></div>
+          </article>
+        </section>
+
+        <section class="page" id="page-statistics" data-page="statistics">
+          <article class="section-card glass">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Statistik</p>
+                <h3>Performa tabungan</h3>
+              </div>
+              <span class="chip success">Akurasi</span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-box">
+                <span>Total pemasukan</span>
+                <strong id="statIncome">Rp0</strong>
+              </div>
+              <div class="stat-box">
+                <span>Total penarikan</span>
+                <strong id="statWithdraw">Rp0</strong>
+              </div>
+              <div class="stat-box">
+                <span>Pencapaian</span>
+                <strong id="statAchieve">0%</strong>
+              </div>
+              <div class="stat-box">
+                <span>Transaksi</span>
+                <strong id="statTx">0</strong>
+              </div>
+            </div>
+          </article>
+
+          <div class="grid-2">
+            <article class="section-card glass chart-card">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Grafik mingguan</p>
+                  <h3>7 hari</h3>
+                </div>
+                <span class="chip">Bar</span>
+              </div>
+              <canvas id="weeklyChart" width="800" height="320"></canvas>
+            </article>
+            <article class="section-card glass chart-card">
+              <div class="section-head">
+                <div>
+                  <p class="eyebrow">Grafik bulanan</p>
+                  <h3>12 bulan</h3>
+                </div>
+                <span class="chip">Line</span>
+              </div>
+              <canvas id="monthlyChart" width="800" height="320"></canvas>
+            </article>
+          </div>
+        </section>
+
+        <section class="page" id="page-profile" data-page="profile">
+          <article class="section-card glass profile-card">
+            <div class="profile-header">
+              <div class="avatar" id="profileAvatar">P</div>
+              <div>
+                <p class="eyebrow">Profil</p>
+                <h3 id="profileNameTitle">Pengguna Penabung</h3>
+                <span class="chip" id="themeLabel">Tema terang</span>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="secondary-btn ripple" id="editProfileBtn">Edit Profil</button>
+              <button class="secondary-btn ripple" id="themeBtnInProfile">Tema</button>
+            </div>
+          </article>
+
+          <article class="section-card glass info-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Tentang aplikasi</p>
+                <h3>Dirancang untuk tabungan yang lebih disiplin</h3>
+              </div>
+            </div>
+            <p class="muted">Penabung menyimpan transaksi di LocalStorage, mendukung target, statistik, riwayat, validasi, dan feedback visual ringan yang nyaman di mobile.</p>
+          </article>
+
+          <article class="section-card glass danger-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Pengaturan data</p>
+                <h3>Reset aplikasi</h3>
+              </div>
+            </div>
+            <button class="danger-btn ripple" id="resetDataBtn">Reset Semua Data</button>
+          </article>
+        </section>
+      </div>
+
+      <nav class="bottom-nav glass">
+        <button class="nav-item active ripple" data-nav="home"><span class="icon" data-icon="home"></span><small>Home</small></button>
+        <button class="nav-item ripple" data-nav="target"><span class="icon" data-icon="target"></span><small>Target</small></button>
+        <button class="nav-item fab ripple" data-nav="add"><span class="fab-plus">+</span><small>Tambah</small></button>
+        <button class="nav-item ripple" data-nav="history"><span class="icon" data-icon="history"></span><small>Riwayat</small></button>
+        <button class="nav-item ripple" data-nav="profile"><span class="icon" data-icon="user"></span><small>Profil</small></button>
+      </nav>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+    <div id="overlay" class="overlay hidden"></div>
+
+    <section id="modalRoot" class="modal-root hidden" aria-hidden="true">
+      <div class="modal glass" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow" id="modalEyebrow">Dialog</p>
+            <h3 id="modalTitle">Judul</h3>
+          </div>
+          <button class="icon-btn ripple" id="closeModalBtn" aria-label="Tutup dialog"><span class="icon" data-icon="close"></span></button>
+        </div>
+        <div id="modalBody"></div>
+      </div>
+    </section>
+
+    <section id="bottomSheetRoot" class="bottom-sheet-root hidden" aria-hidden="true"></section>
+  </div>
+
+  <template id="targetFormTemplate">
+    <form id="targetForm" class="form-grid modal-form">
+      <label>
+        <span>Nama target</span>
+        <input id="targetName" type="text" maxlength="40" placeholder="contoh: Laptop baru" />
+        <small class="field-error" data-error-for="targetName"></small>
+      </label>
+      <label>
+        <span>Nominal target</span>
+        <div class="input-wrap">
+          <span class="prefix">Rp</span>
+          <input id="targetAmount" type="number" min="10000" placeholder="contoh: 1000000" />
+        </div>
+        <small class="field-error" data-error-for="targetAmount"></small>
+      </label>
+      <label>
+        <span>Target terkumpul</span>
+        <div class="input-wrap">
+          <span class="prefix">Rp</span>
+          <input id="targetSaved" type="number" min="0" placeholder="0" />
+        </div>
+        <small class="field-error" data-error-for="targetSaved"></small>
+      </label>
+      <label>
+        <span>Tenggat</span>
+        <input id="targetDeadline" type="date" />
+        <small class="field-error" data-error-for="targetDeadline"></small>
+      </label>
+      <div class="form-actions full">
+        <button type="button" class="secondary-btn ripple" id="cancelTargetBtn">Batal</button>
+        <button type="submit" class="primary-btn ripple" id="saveTargetBtn">Simpan Target</button>
+      </div>
+    </form>
+  </template>
+
+  <template id="profileFormTemplate">
+    <form id="profileForm" class="form-grid modal-form">
+      <label>
+        <span>Nama</span>
+        <input id="profileNameInput" type="text" maxlength="32" placeholder="Nama pengguna" />
+        <small class="field-error" data-error-for="profileNameInput"></small>
+      </label>
+      <label>
+        <span>Warna aksen</span>
+        <select id="accentColorSelect">
+          <option value="#4F46E5">Indigo</option>
+          <option value="#0EA5E9">Sky</option>
+          <option value="#10B981">Emerald</option>
+          <option value="#F97316">Orange</option>
+          <option value="#EC4899">Pink</option>
+        </select>
+      </label>
+      <div class="form-actions full">
+        <button type="button" class="secondary-btn ripple" id="cancelProfileBtn">Batal</button>
+        <button type="submit" class="primary-btn ripple">Simpan Profil</button>
+      </div>
+    </form>
+  </template>
+
+  <template id="transactionDetailTemplate">
+    <div class="detail-grid">
+      <div class="detail-row"><span>Tipe</span><strong id="detailType"></strong></div>
+      <div class="detail-row"><span>Nominal</span><strong id="detailAmount"></strong></div>
+      <div class="detail-row"><span>Kategori</span><strong id="detailCategory"></strong></div>
+      <div class="detail-row"><span>Catatan</span><strong id="detailNote"></strong></div>
+      <div class="detail-row"><span>Tanggal</span><strong id="detailDate"></strong></div>
+    </div>
+  </template>
+
+  <script src="script.js"></script>
 </body>
-    </html>
+</html>
