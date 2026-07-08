@@ -1,4 +1,4 @@
-export const API_KEY = "AQ.Ab8RN6IyesCmt38rwJpIy4jSnw444yV_r2mTfyQyyqp03MP84A";
+export const API_KEY = "AQ.Ab8RN6Is_lFiQRg8jGIVLgXIHakbaW5e2c8cu2bEkLFk6SlPdw";
 export const MODEL = "gemini-2.0-flash";
 export const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
