@@ -57,6 +57,14 @@ module.exports = async (req, res) => {
     const url = await txt2video(prompt);
     return res.status(200).json({ ok: true, url });
   } catch (error) {
-    return res.status(500).json({ ok: false, error: error.message || 'Terjadi kesalahan' });
-  }
+    console.error(error.response?.status);
+    console.error(error.response?.data);
+
+    return res.status(500).json({
+        ok: false,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+    });
+        }
 };
