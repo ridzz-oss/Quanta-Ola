@@ -100,49 +100,54 @@
     <div class="small">Kalau video sudah keluar, tombol download akan aktif otomatis.</div>
   </main>
 
-  <script>
-    const promptEl = document.getElementById('prompt');
-    const generateBtn = document.getElementById('generate');
-    const downloadBtn = document.getElementById('download');
-    const statusEl = document.getElementById('status');
-    const player = document.getElementById('player');
+<script>
+  const promptEl = document.getElementById('prompt');
+  const generateBtn = document.getElementById('generate');
+  const downloadBtn = document.getElementById('download');
+  const statusEl = document.getElementById('status');
+  const player = document.getElementById('player');
 
-    generateBtn.addEventListener('click', async () => {
-      const prompt = promptEl.value.trim();
-      if (!prompt) {
-        statusEl.textContent = 'Prompt tidak boleh kosong.';
-        return;
+  generateBtn.addEventListener('click', async () => {
+    const prompt = promptEl.value.trim();
+
+    if (!prompt) {
+      statusEl.textContent = 'Prompt tidak boleh kosong.';
+      return;
+    }
+
+    generateBtn.disabled = true;
+    downloadBtn.style.display = 'none';
+    player.style.display = 'none';
+    statusEl.textContent = 'Sedang membuat video...';
+
+    try {
+      const response = await fetch('/api/txt2video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          prompt: prompt
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || 'Gagal membuat video');
       }
 
-      generateBtn.disabled = true;
-      downloadBtn.style.display = 'none';
-      player.style.display = 'none';
-      statusEl.textContent = 'Sedang membuat video...';
-
-      try {
-        const response = await fetch('/api/txt2video', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.ok) {
-          throw new Error(data.error || 'Gagal membuat video');
-        }
-
-        player.src = data.url;
-        player.style.display = 'block';
-        downloadBtn.href = data.url;
-        downloadBtn.style.display = 'inline-flex';
-        statusEl.textContent = 'Video siap.';
-      } catch (error) {
-        statusEl.textContent = 'Error: ' + error.message;
-      } finally {
-        generateBtn.disabled = false;
-      }
-    });
-  </script>
+      player.src = data.url;
+      player.style.display = 'block';
+      downloadBtn.href = data.url;
+      downloadBtn.style.display = 'inline-flex';
+      statusEl.textContent = 'Video siap.';
+    } catch (error) {
+      statusEl.textContent = 'Error: ' + error.message;
+    } finally {
+      generateBtn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>
